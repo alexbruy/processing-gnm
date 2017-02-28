@@ -28,6 +28,8 @@ __revision__ = '$Format:%H$'
 from processing.core.AlgorithmProvider import AlgorithmProvider
 from processing.core.ProcessingConfig import Setting, ProcessingConfig
 
+from processing_gnm.createnetwork import CreateNetwork
+
 
 class GnmProvider(AlgorithmProvider):
 
@@ -37,9 +39,9 @@ class GnmProvider(AlgorithmProvider):
         self.activate = False
 
         self.alglist = []
-        #~ self.alglist = [ExampleAlgorithm()]
-        #~ for alg in self.alglist:
-            #~ alg.provider = self
+        self.alglist = [CreateNetwork()]
+        for alg in self.alglist:
+            alg.provider = self
 
     def initializeSettings(self):
         AlgorithmProvider.initializeSettings(self)
