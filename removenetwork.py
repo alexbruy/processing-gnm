@@ -2,7 +2,7 @@
 
 """
 ***************************************************************************
-    gnmprovider.py
+    removenetwork.py
     ---------------------
     Date                 : February 2017
     Copyright            : (C) 2017 by Alexander Bruy
@@ -25,39 +25,26 @@ __copyright__ = '(C) 2017, Alexander Bruy'
 
 __revision__ = '$Format:%H$'
 
-from processing.core.AlgorithmProvider import AlgorithmProvider
-from processing.core.ProcessingConfig import Setting, ProcessingConfig
+from osgeo import gdal
 
-from processing_gnm.createnetwork import CreateNetwork
-from processing_gnm.removenetwork import RemoveNetwork
+from processing.core.GeoAlgorithm import GeoAlgorithm
+from processing.core.parameters import ParameterFile
 
+class CreateNetwork(GeoAlgorithm):
 
-class GnmProvider(AlgorithmProvider):
+    NETWORK = 'NETWORK'
 
-    def __init__(self):
-        super().__init__()
+    def defineCharacteristics(self):
+        self.name = 'Remove network'
+        self.group = 'Network management'
 
-        self.activate = False
+        self.addParameter(ParameterFile(
+            self.NETWORK,
+            self.tr('Directory with network'),
+            isFolder=True,
+            optional=False))
 
-        self.alglist = []
-        self.alglist = [CreateNetwork(), RemoveNetwork()]
-        for alg in self.alglist:
-            alg.provider = self
+    def processAlgorithm(self, feedback):
+        network = self.getParameterValue(self.NETWORK)
 
-    def initializeSettings(self):
-        AlgorithmProvider.initializeSettings(self)
-
-    def unload(self):
-        AlgorithmProvider.unload(self)
-
-    def id(self):
-        return 'GDAL GNM'
-
-    def name(self):
-        return 'GDAL GNM'
-
-    def icon(self):
-        return AlgorithmProvider.icon(self)
-
-    def _loadAlgorithms(self):
-        self.algs = self.alglist
+        gdal.GetDriverByName('GNMFile').Delete(network)
