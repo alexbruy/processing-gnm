@@ -30,6 +30,7 @@ from processing.core.ProcessingConfig import Setting, ProcessingConfig
 
 from processing_gnm.createnetwork import CreateNetwork
 from processing_gnm.removenetwork import RemoveNetwork
+from processing_gnm.shortestpathpointtopoint import ShortestPathPointToPoint
 
 
 class GnmProvider(AlgorithmProvider):
@@ -40,7 +41,8 @@ class GnmProvider(AlgorithmProvider):
         self.activate = False
 
         self.alglist = []
-        self.alglist = [CreateNetwork(), RemoveNetwork()]
+        self.alglist = [CreateNetwork(), RemoveNetwork(),
+                        ShortestPathPointToPoint()]
         for alg in self.alglist:
             alg.provider = self
 

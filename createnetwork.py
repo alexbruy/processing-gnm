@@ -28,8 +28,7 @@ __revision__ = '$Format:%H$'
 from osgeo import gdal, ogr, gnm
 
 from processing.core.GeoAlgorithm import GeoAlgorithm
-from processing.core.GeoAlgorithmExecutionException import \
-    GeoAlgorithmExecutionException
+from processing.core.GeoAlgorithmExecutionException import GeoAlgorithmExecutionException
 from processing.core.parameters import (ParameterMultipleInput,
                                         ParameterNumber,
                                         ParameterString,
