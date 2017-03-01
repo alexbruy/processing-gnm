@@ -157,6 +157,14 @@ class CreateNetwork(GeoAlgorithm):
 
             layerDs = None
 
+        # add rules
+        if rules is not None:
+            for r in rules.split('\n'):
+                result = genericNetwork.CreateRule(r)
+                if result != 0:
+                    raise GeoAlgorithmExecutionException(
+                        self.tr('Can not create rule "{}".'.format(r))
+
         # warn user if some layers are missing
         if not hasPointLayer:
             feedback.pushInfo(
