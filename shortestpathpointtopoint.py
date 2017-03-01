@@ -140,6 +140,7 @@ class ShortestPathPointToPoint(GeoAlgorithm):
         if outputPath.startswith(('memory:', 'postgis:', 'spatialite:')):
             networkCrs = network.GetProjectionRef()
             crs = QgsCoordinateReferenceSystem(networkCrs)
+            # TODO: copy fields
             fields = QgsFields()
             writer = self.getOutputFromName(
                 self.OUTPUT_LAYER).getVectorWriter(
@@ -183,9 +184,3 @@ class ShortestPathPointToPoint(GeoAlgorithm):
         network.ReleaseResultSet(layer)
         network = None
         ds = None
-
-
-
-
-
-
