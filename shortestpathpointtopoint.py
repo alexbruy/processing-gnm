@@ -30,7 +30,8 @@ from osgeo import gdal, gnm, ogr
 from qgis.core import (QgsCoordinateReferenceSystem,
                        QgsGeometry,
                        QgsFeature,
-                       QgsFields)
+                       QgsFields,
+                       QgsWkbTypes)
 
 from processing.core.GeoAlgorithm import GeoAlgorithm
 from processing.core.GeoAlgorithmExecutionException import GeoAlgorithmExecutionException
@@ -64,7 +65,7 @@ class ShortestPathPointToPoint(GeoAlgorithm):
         self.addParameter(ParameterNumber(
             self.NUMBER_OF_PATHS,
             self.tr('Number of paths to calculate'),
-            1, 1, 99))
+            1, 99, 1))
         self.addParameter(ParameterNumber(
             self.START_POINT,
             self.tr('GFID of the start node (value of the "gnm_fid" field)')))
@@ -143,7 +144,7 @@ class ShortestPathPointToPoint(GeoAlgorithm):
             # TODO: copy fields
             fields = QgsFields()
             writer = self.getOutputFromName(
-                self.OUTPUT_LAYER).getVectorWriter(
+                self.SHORTEST_PATHS).getVectorWriter(
                     fields,
                     QgsWkbTypes.LineString,
                     crs)
@@ -154,7 +155,7 @@ class ShortestPathPointToPoint(GeoAlgorithm):
             layer.ResetReading()
             f = layer.GetNextFeature()
             while f is not None:
-                wkbGeom = f.GetGeometryRef().ExportToWkb(ogr.wkbNDR)
+                wkb = f.GetGeometryRef().ExportToWkb(ogr.wkbNDR)
                 geom.fromWkb(wkb)
                 feat.setGeometry(geom)
                 writer.addFeature(feat)
