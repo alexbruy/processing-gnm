@@ -25,12 +25,15 @@ __copyright__ = '(C) 2017, Alexander Bruy'
 
 __revision__ = '$Format:%H$'
 
+import os
+
 from osgeo import gdal, gnm, ogr
 
 from qgis.core import (QgsCoordinateReferenceSystem,
                        QgsGeometry,
                        QgsFeature,
-                       QgsFields)
+                       QgsFields,
+                       QgsWkbTypes)
 
 from processing.core.GeoAlgorithm import GeoAlgorithm
 from processing.core.GeoAlgorithmExecutionException import GeoAlgorithmExecutionException
@@ -81,13 +84,13 @@ class ConnectivityTreePoint(GeoAlgorithm):
         if gfidsBlocked is not None:
             gfidsBlocked = [int(gfid.strip()) for gfid in gfidsBlocked.split(',')]
 
-        if gfidStart in gfidsBlocked:
-            raise GeoAlgorithmExecutionException(
-                self.tr('Start point can not be blocked.'))
+            if gfidStart in gfidsBlocked:
+                raise GeoAlgorithmExecutionException(
+                    self.tr('Start point can not be blocked.'))
 
         # load network
         ds = gdal.OpenEx(networkPath)
-        network = gnm.CastToGenericNetwork(self.NETWORK_DS)
+        network = gnm.CastToGenericNetwork(ds)
         if network is None:
             raise GeoAlgorithmExecutionException(
                 self.tr('Can not open generic network dataset.'))
@@ -120,7 +123,7 @@ class ConnectivityTreePoint(GeoAlgorithm):
             # TODO: copy fields
             fields = QgsFields()
             writer = self.getOutputFromName(
-                self.OUTPUT_LAYER).getVectorWriter(
+                self.CONNECTIVITY_TREE).getVectorWriter(
                     fields,
                     QgsWkbTypes.LineString,
                     crs)
@@ -131,7 +134,7 @@ class ConnectivityTreePoint(GeoAlgorithm):
             layer.ResetReading()
             f = layer.GetNextFeature()
             while f is not None:
-                wkbGeom = f.GetGeometryRef().ExportToWkb(ogr.wkbNDR)
+                wkb = f.GetGeometryRef().ExportToWkb(ogr.wkbNDR)
                 geom.fromWkb(wkb)
                 feat.setGeometry(geom)
                 writer.addFeature(feat)

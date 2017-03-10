@@ -25,6 +25,8 @@ __copyright__ = '(C) 2017, Alexander Bruy'
 
 __revision__ = '$Format:%H$'
 
+import os
+
 from osgeo import gdal, gnm, ogr
 
 from qgis.core import (QgsCoordinateReferenceSystem,
@@ -169,12 +171,12 @@ class ShortestPathPointToPoint(GeoAlgorithm):
                 raise GeoAlgorithmExecutionException(
                     self.tr('Can not initialize {} driver'.format(driverName)))
 
-            outDs = driver.Create(outputPath, 0, 0, 0, gdal.GDT_Unknown, None)
+            outDs = driver.Create(outputPath, 0, 0, 0, gdal.GDT_Unknown, [])
             if outDs is None:
                 raise GeoAlgorithmExecutionException(
                     self.tr('Can not create output file {}'.format(outputPath)))
 
-            layerName = os.path.splitext(os.path.baseName(outputPath))[0]
+            layerName = os.path.splitext(os.path.basename(outputPath))[0]
             res = outDs.CopyLayer(layer, layerName)
             if res is None:
                 raise GeoAlgorithmExecutionException(
