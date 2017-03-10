@@ -63,23 +63,23 @@ class ShortestPathPointToPoint(GeoAlgorithm):
             optional=False))
         self.addParameter(ParameterNumber(
             self.NUMBER_OF_PATHS,
-            self.tr('Number of paths to calculate')
-            1, 1, 99)
+            self.tr('Number of paths to calculate'),
+            1, 1, 99))
         self.addParameter(ParameterNumber(
             self.START_POINT,
-            self.tr('GFID of the start node (value of the "gnm_fid" field)'))
+            self.tr('GFID of the start node (value of the "gnm_fid" field)')))
         self.addParameter(ParameterNumber(
             self.END_POINT,
-            self.tr('GFID of the end node (value of the "gnm_fid" field)'))
+            self.tr('GFID of the end node (value of the "gnm_fid" field)')))
         self.addParameter(ParameterString(
             self.BLOCKED_POINTS,
             self.tr('Comma-separated GFIDs of the blocked nodes'),
-            ''
+            '',
             optional=True))
 
         self.addOutput(OutputVector(
             self.SHORTEST_PATHS,
-            self.tr('Shortest path(s)'))
+            self.tr('Shortest path(s)')))
 
     def processAlgorithm(self, feedback):
         networkPath = self.getParameterValue(self.NETWORK)
@@ -96,17 +96,17 @@ class ShortestPathPointToPoint(GeoAlgorithm):
         if gfidsBlocked is not None:
             gfidsBlocked = [int(gfid.strip()) for gfid in gfidsBlocked.split(',')]
 
-        if gfidStart in gfidsBlocked:
-            raise GeoAlgorithmExecutionException(
-                self.tr('Start point can not be blocked.'))
+            if gfidStart in gfidsBlocked:
+                raise GeoAlgorithmExecutionException(
+                    self.tr('Start point can not be blocked.'))
 
-        if gfidEnd in gfidsBlocked:
-            raise GeoAlgorithmExecutionException(
-                self.tr('End point can not be blocked.'))
+            if gfidEnd in gfidsBlocked:
+                raise GeoAlgorithmExecutionException(
+                    self.tr('End point can not be blocked.'))
 
         # load network
         ds = gdal.OpenEx(networkPath)
-        network = gnm.CastToGenericNetwork(self.NETWORK_DS)
+        network = gnm.CastToGenericNetwork(ds)
         if network is None:
             raise GeoAlgorithmExecutionException(
                 self.tr('Can not open generic network dataset.'))

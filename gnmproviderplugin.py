@@ -32,7 +32,7 @@ import inspect
 
 from processing.core.Processing import Processing
 
-from processing_gnm.GnmProvider import GnmProvider
+from processing_gnm.gnmprovider import GnmProvider
 
 cmd_folder = os.path.split(inspect.getfile(inspect.currentframe()))[0]
 

@@ -37,7 +37,7 @@ from processing_gnm.connectivitytreepoint import ConnectivityTreePoint
 class GnmProvider(AlgorithmProvider):
 
     def __init__(self):
-        super().__init__()
+        AlgorithmProvider.__init__(self)
 
         self.activate = False
 

@@ -61,16 +61,16 @@ class ConnectivityTreePoint(GeoAlgorithm):
             optional=False))
         self.addParameter(ParameterNumber(
             self.START_POINT,
-            self.tr('GFID of the start node (value of the "gnm_fid" field)'))
+            self.tr('GFID of the start node (value of the "gnm_fid" field)')))
         self.addParameter(ParameterString(
             self.BLOCKED_POINTS,
             self.tr('Comma-separated GFIDs of the blocked nodes'),
-            ''
+            '',
             optional=True))
 
         self.addOutput(OutputVector(
             self.CONNECTIVITY_TREE,
-            self.tr('Connectivity tree'))
+            self.tr('Connectivity tree')))
 
     def processAlgorithm(self, feedback):
         networkPath = self.getParameterValue(self.NETWORK)

@@ -59,31 +59,31 @@ class CreateNetwork(GeoAlgorithm):
         self.addParameter(ParameterNumber(
             self.TOLERANCE,
             self.tr('Topology tolerance'),
-            0.0, 0.0, 99999999.999999)
+            0.0, 0.0, 99999999.999999))
         self.addParameter(ParameterString(
             self.NETWORK_FORMAT,
             self.tr('Network format'),
-            'ESRI Shapefile')
+            'ESRI Shapefile'))
         self.addParameter(ParameterCrs(
             self.NETWORK_CRS,
             self.tr('Network CRS'),
-            'EPSG:4326')
+            'EPSG:4326'))
         self.addParameter(ParameterString(
             self.NETWORK_NAME,
-            self.tr('Network name'))
+            self.tr('Network name')))
         self.addParameter(ParameterString(
             self.NETWORK_DESCRIPTION,
             self.tr('Network description'),
-            optional=True)
+            optional=True))
         self.addParameter(ParameterString(
             self.RULES,
             self.tr('Network rules'),
             multiline=True,
-            optional=True)
+            optional=True))
 
-        self.addOutput(OutputDirectory
+        self.addOutput(OutputDirectory(
             self.NETWORK,
-            self.tr('Directory for storing network'))
+            self.tr('Directory for storing network')))
 
     def processAlgorithm(self, feedback):
         layers = self.getParameterValue(self.INPUT_LAYERS).split(';')
@@ -163,7 +163,7 @@ class CreateNetwork(GeoAlgorithm):
                 result = genericNetwork.CreateRule(r)
                 if result != 0:
                     raise GeoAlgorithmExecutionException(
-                        self.tr('Can not create rule "{}".'.format(r))
+                        self.tr('Can not create rule "{}".'.format(r)))
 
         # warn user if some layers are missing
         if not hasPointLayer:
@@ -178,7 +178,7 @@ class CreateNetwork(GeoAlgorithm):
             importedLayers, tolerance, 1.0, 1.0, gnm.GNM_EDGE_DIR_BOTH)
         if result != 0:
             raise GeoAlgorithmExecutionException(
-                self.tr('Can not build network topology.')
+                self.tr('Can not build network topology.'))
 
         # close all datasets
         genericNetwork = None
