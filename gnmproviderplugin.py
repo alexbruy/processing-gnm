@@ -2,7 +2,7 @@
 
 """
 ***************************************************************************
-    GnmProviderPlugin.py
+    gnmproviderplugin.py
     ---------------------
     Date                 : February 2017
     Copyright            : (C) 2017 by Alexander Bruy

@@ -50,6 +50,7 @@ class ConnectivityTreePoint(GeoAlgorithm):
 
     NETWORK = 'NETWORK'
     START_POINT = 'START_POINT'
+    END_POINT = 'END_POINT'
     BLOCKED_POINTS = 'BLOCKED_POINTS'
     CONNECTIVITY_TREE = 'CONNECTIVITY_TREE'
 
@@ -64,7 +65,13 @@ class ConnectivityTreePoint(GeoAlgorithm):
             optional=False))
         self.addParameter(ParameterNumber(
             self.START_POINT,
-            self.tr('GFID of the start node (value of the "gnm_fid" field)')))
+            self.tr('GFID of the start node (value of the "gnm_fid" field)'),
+            default=0))
+        self.addParameter(ParameterNumber(
+            self.END_POINT,
+            self.tr('GFID of the end node (value of the "gnm_fid" field)'),
+            default=0,
+            optional=True))
         self.addParameter(ParameterString(
             self.BLOCKED_POINTS,
             self.tr('Comma-separated GFIDs of the blocked nodes'),
@@ -78,6 +85,7 @@ class ConnectivityTreePoint(GeoAlgorithm):
     def processAlgorithm(self, feedback):
         networkPath = self.getParameterValue(self.NETWORK)
         gfidStart = self.getParameterValue(self.START_POINT)
+        gfidEng = self.getParameterValue(self.END_POINT)
         gfidsBlocked = self.getParameterValue(self.BLOCKED_POINTS)
         outputPath = self.getOutputValue(self.CONNECTIVITY_TREE)
 
@@ -87,6 +95,10 @@ class ConnectivityTreePoint(GeoAlgorithm):
             if gfidStart in gfidsBlocked:
                 raise GeoAlgorithmExecutionException(
                     self.tr('Start point can not be blocked.'))
+
+            if gfidEnd is not None and gfidEnd in gfidsBlocked:
+                raise GeoAlgorithmExecutionException(
+                    self.tr('End point can not be blocked.'))
 
         # load network
         ds = gdal.OpenEx(networkPath)
@@ -100,8 +112,11 @@ class ConnectivityTreePoint(GeoAlgorithm):
             for gfid in gfidsBlocked:
                 network.ChangeBlockState(gfid, True)
 
-        # calculate shortest paths
-        layer = network.GetPath(gfidStart, -1, gnm.GATConnectedComponents)
+        # find connected nodes and edges
+        if gfidEnd is not None:
+            layer = network.GetPath(gfidStart, gfidEnd, gnm.GATConnectedComponents)
+        else:
+            layer = network.GetPath(gfidStart, -1, gnm.GATConnectedComponents)
 
         # unblock previously blocked nodes
         if gfidsBlocked is not None:

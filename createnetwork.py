@@ -36,6 +36,7 @@ from processing.core.parameters import (ParameterMultipleInput,
 from processing.core.outputs import OutputDirectory
 from processing.tools import dataobjects
 
+
 class CreateNetwork(GeoAlgorithm):
 
     INPUT_LAYERS = 'INPUT_LAYERS'
@@ -59,7 +60,7 @@ class CreateNetwork(GeoAlgorithm):
         self.addParameter(ParameterNumber(
             self.TOLERANCE,
             self.tr('Topology tolerance'),
-            0.0, 0.0, 99999999.999999))
+            0.0, 99999999.999999, 0.0))
         self.addParameter(ParameterString(
             self.NETWORK_FORMAT,
             self.tr('Network format'),

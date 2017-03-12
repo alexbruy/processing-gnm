@@ -70,10 +70,12 @@ class ShortestPathPointToPoint(GeoAlgorithm):
             1, 99, 1))
         self.addParameter(ParameterNumber(
             self.START_POINT,
-            self.tr('GFID of the start node (value of the "gnm_fid" field)')))
+            self.tr('GFID of the start node (value of the "gnm_fid" field)'),
+            default=0))
         self.addParameter(ParameterNumber(
             self.END_POINT,
-            self.tr('GFID of the end node (value of the "gnm_fid" field)')))
+            self.tr('GFID of the end node (value of the "gnm_fid" field)'),
+            default=0))
         self.addParameter(ParameterString(
             self.BLOCKED_POINTS,
             self.tr('Comma-separated GFIDs of the blocked nodes'),

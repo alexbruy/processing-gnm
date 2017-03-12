@@ -1,12 +1,12 @@
 [general]
 name=GNM for Processing
 description=Analyse networks with GDAL GNM
-about=Perform network analysis using GDAL GNM.
+about=Perform network analysis using GDAL GNM. NOTE: requires GDAL >= 2.1 build with GNM support
 category=Plugins
 version=0.1.0
 qgisMinimumVersion=2.99
 
-icon=icons/prepair.png
+icon=icons/networkanalysis.svg
 tags=analysis,processing,network
 
 author=Alexander Bruy

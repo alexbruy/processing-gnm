@@ -30,6 +30,7 @@ from osgeo import gdal
 from processing.core.GeoAlgorithm import GeoAlgorithm
 from processing.core.parameters import ParameterFile
 
+
 class RemoveNetwork(GeoAlgorithm):
 
     NETWORK = 'NETWORK'

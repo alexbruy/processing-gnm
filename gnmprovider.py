@@ -25,6 +25,10 @@ __copyright__ = '(C) 2017, Alexander Bruy'
 
 __revision__ = '$Format:%H$'
 
+import os
+
+from qgis.PyQt.QtGui import QIcon
+
 from processing.core.AlgorithmProvider import AlgorithmProvider
 from processing.core.ProcessingConfig import Setting, ProcessingConfig
 
@@ -61,7 +65,7 @@ class GnmProvider(AlgorithmProvider):
         return 'GDAL GNM'
 
     def icon(self):
-        return AlgorithmProvider.icon(self)
+        return QIcon(os.path.dirname(__file__) + '/icons/networkanalysis.svg')
 
     def _loadAlgorithms(self):
         self.algs = self.alglist
