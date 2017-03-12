@@ -29,10 +29,13 @@ import os
 
 from osgeo import gdal, gnm, ogr
 
+from qgis.PyQt.QtCore import QVariant
+
 from qgis.core import (QgsCoordinateReferenceSystem,
                        QgsGeometry,
                        QgsFeature,
                        QgsFields,
+                       QgsField,
                        QgsWkbTypes)
 
 from processing.core.GeoAlgorithm import GeoAlgorithm
@@ -141,50 +144,42 @@ class ShortestPathPointToPoint(GeoAlgorithm):
             feedback.pushInfo(
                 self.tr('There is no path from the start point to the end point.'))
 
-        # move features to the output layer
-        if outputPath.startswith(('memory:', 'postgis:', 'spatialite:')):
-            networkCrs = network.GetProjectionRef()
-            crs = QgsCoordinateReferenceSystem(networkCrs)
-            # TODO: copy fields
-            fields = QgsFields()
-            writer = self.getOutputFromName(
-                self.SHORTEST_PATHS).getVectorWriter(
-                    fields,
-                    QgsWkbTypes.LineString,
-                    crs)
+        # copy features to the output layer
+        networkCrs = network.GetProjectionRef()
+        crs = QgsCoordinateReferenceSystem(networkCrs)
 
-            feat = QgsFeature()
-            geom = QgsGeometry()
+        fields = QgsFields()
+        fields.append(QgsField('gfid', QVariant.Int, '', 10, 0))
+        fields.append(QgsField('ogrlayer', QVariant.String, '', 254))
+        fields.append(QgsField('path_num', QVariant.Int, '', 10, 0))
+        fields.append(QgsField('type', QVariant.String, '', 254))
 
-            layer.ResetReading()
-            f = layer.GetNextFeature()
-            while f is not None:
-                wkb = f.GetGeometryRef().ExportToWkb(ogr.wkbNDR)
+        writer = self.getOutputFromName(
+            self.SHORTEST_PATHS).getVectorWriter(
+                fields,
+                QgsWkbTypes.LineString,
+                crs)
+
+        feat = QgsFeature()
+        feat.setFields(fields)
+        geom = QgsGeometry()
+
+        layer.ResetReading()
+        f = layer.GetNextFeature()
+        while f is not None:
+            g = f.GetGeometryRef()
+            if g.GetGeometryType() == ogr.wkbLineString:
+                wkb = g.ExportToWkb()
                 geom.fromWkb(wkb)
                 feat.setGeometry(geom)
+                feat['gfid'] = f.GetFieldAsInteger64(0)
+                feat['ogrlayer'] = f.GetFieldAsString(1)
+                feat['path_num'] = f.GetFieldAsInteger64(2)
+                feat['type'] = f.GetFieldAsString(3)
                 writer.addFeature(feat)
-                f = layer.GetNextFeature()
+            f = layer.GetNextFeature()
 
-            del writer
-        else:
-            driverName = GdalUtils.getVectorDriverFromFileName(outputPath)
-            driver = gdal.GetDriverByName(driverName)
-            if driver is None:
-                raise GeoAlgorithmExecutionException(
-                    self.tr('Can not initialize {} driver'.format(driverName)))
-
-            outDs = driver.Create(outputPath, 0, 0, 0, gdal.GDT_Unknown, [])
-            if outDs is None:
-                raise GeoAlgorithmExecutionException(
-                    self.tr('Can not create output file {}'.format(outputPath)))
-
-            layerName = os.path.splitext(os.path.basename(outputPath))[0]
-            res = outDs.CopyLayer(layer, layerName)
-            if res is None:
-                raise GeoAlgorithmExecutionException(
-                    self.tr('Can not write data to the output file {}'.format(outputPath)))
-
-            outDs = None
+        del writer
 
         network.ReleaseResultSet(layer)
         network = None
