@@ -8,3 +8,5 @@ used to call native and third party algorithms from QGIS, making your
 spatial analysis tasks more productive and easy to accomplish.
 
 This plugin implements GNM provider for QGIS Processing framework.
+
+NOTE: to use this plugin you need GDAL >= 2.1 build with GNM support.
