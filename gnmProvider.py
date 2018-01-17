@@ -57,7 +57,7 @@ class GnmProvider(QgsProcessingProvider):
         return "GDAL GNM"
 
     def icon(self):
-        return QIcon(os.path.join(pluginPath, "icons", "networkanalysis.svg"))
+        return QIcon(os.path.join(pluginPath, "icons", "gnm.svg"))
 
     def load(self):
         ProcessingConfig.settingIcons[self.name()] = self.icon()

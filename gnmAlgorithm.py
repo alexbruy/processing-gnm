@@ -44,7 +44,7 @@ class GnmAlgorithm(QgsProcessingAlgorithm):
         return type(self)()
 
     def icon(self):
-        return QIcon(os.path.join(pluginPath, "icons", "networkanalysis.svg"))
+        return QIcon(os.path.join(pluginPath, "icons", "gnm.svg"))
 
     def tr(self, text):
         return QCoreApplication.translate(self.__class__.__name__, text)

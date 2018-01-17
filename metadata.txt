@@ -6,7 +6,7 @@ category=Plugins
 version=0.1.0
 qgisMinimumVersion=2.99
 
-icon=icons/networkanalysis.svg
+icon=icons/gnm.svg
 tags=analysis,processing,network
 
 author=Alexander Bruy
