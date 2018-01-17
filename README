@@ -3,10 +3,13 @@ GNM for Processing
 Geographic Network Model (GNM) is a set of GDAL classes and tools for
 creating, managing and analysing networks built over spatial data.
 
-Processing (former SEXTANTE) is a geoprocessing environment that can be
-used to call native and third party algorithms from QGIS, making your
-spatial analysis tasks more productive and easy to accomplish.
 
-This plugin implements GNM provider for QGIS Processing framework.
+Processing is a geoprocessing environment that can be used to call native and
+third party algorithms from QGIS, making your spatial analysis tasks more
+productive and easy to accomplish.
 
-NOTE: to use this plugin you need GDAL >= 2.1 build with GNM support.
+This plugin implements GDAL GNM provider for QGIS Processing framework.
+Requires QGIS >= 3.0
+
+NOTE: to use this plugin you need GDAL >= 2.1 build with GNM support and
+corresponing Python bindings.
