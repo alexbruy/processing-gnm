@@ -5,7 +5,7 @@
     shortestpathpointtopoint.py
     ---------------------
     Date                 : February 2017
-    Copyright            : (C) 2017 by Alexander Bruy
+    Copyright            : (C) 2017-2018 by Alexander Bruy
     Email                : alexander dot bruy at gmail dot com
 ***************************************************************************
 *                                                                         *
@@ -19,13 +19,11 @@
 
 __author__ = 'Alexander Bruy'
 __date__ = 'February 2017'
-__copyright__ = '(C) 2017, Alexander Bruy'
+__copyright__ = '(C) 2017-2018, Alexander Bruy'
 
 # This will get replaced with a git SHA1 when you do a git archive
 
 __revision__ = '$Format:%H$'
-
-import os
 
 from osgeo import gdal, gnm, ogr
 
@@ -36,88 +34,92 @@ from qgis.core import (QgsCoordinateReferenceSystem,
                        QgsFeature,
                        QgsFields,
                        QgsField,
-                       QgsWkbTypes)
+                       QgsWkbTypes,
+                       QgsFeatureSink,
+                       QgsProcessing,
+                       QgsProcessingException,
+                       QgsProcessingParameterFile,
+                       QgsProcessingParameterNumber,
+                       QgsProcessingParameterString,
+                       QgsProcessingParameterFeatureSink,
+                       )
 
-from processing.core.GeoAlgorithm import GeoAlgorithm
-from processing.core.GeoAlgorithmExecutionException import GeoAlgorithmExecutionException
-from processing.core.parameters import (ParameterFile,
-                                        ParameterNumber,
-                                        ParameterString)
-
-from processing.core.outputs import OutputVector
-
-from processing.algs.gdal.GdalUtils import GdalUtils
+from processing_gnm.gnmAlgorithm import GnmAlgorithm
 
 
-class ShortestPathPointToPoint(GeoAlgorithm):
+class ShortestPathPointToPoint(GnmAlgorithm):
 
-    NETWORK = 'NETWORK'
-    NUMBER_OF_PATHS = 'NUMBER_OF_PATHS'
-    START_POINT = 'START_POINT'
-    END_POINT = 'END_POINT'
-    BLOCKED_POINTS = 'BLOCKED_POINTS'
-    SHORTEST_PATHS = 'SHORTEST_PATHS'
+    NETWORK = "NETWORK"
+    PATHS_NUMBER = "PATHS_NUMBER"
+    START_POINT = "START_POINT"
+    END_POINT = "END_POINT"
+    BLOCKED_POINTS = "BLOCKED_POINTS"
+    SHORTEST_PATHS = "SHORTEST_PATHS"
 
-    def defineCharacteristics(self):
-        self.name = 'Shortest paths (point to point)'
-        self.group = 'Network analysis'
+    def name(self):
+        return "shortestpathpointtopoint"
 
-        self.addParameter(ParameterFile(
-            self.NETWORK,
-            self.tr('Directory with network'),
-            isFolder=True,
-            optional=False))
-        self.addParameter(ParameterNumber(
-            self.NUMBER_OF_PATHS,
-            self.tr('Number of paths to calculate'),
-            1, 99, 1))
-        self.addParameter(ParameterNumber(
-            self.START_POINT,
-            self.tr('GFID of the start node (value of the "gnm_fid" field)'),
-            default=0))
-        self.addParameter(ParameterNumber(
-            self.END_POINT,
-            self.tr('GFID of the end node (value of the "gnm_fid" field)'),
-            default=0))
-        self.addParameter(ParameterString(
-            self.BLOCKED_POINTS,
-            self.tr('Comma-separated GFIDs of the blocked nodes'),
-            '',
-            optional=True))
+    def displayName(self):
+        return self.tr("Shortest paths (point to point)")
 
-        self.addOutput(OutputVector(
-            self.SHORTEST_PATHS,
-            self.tr('Shortest path(s)')))
+    def group(self):
+        return self.tr("Network analysis")
 
-    def processAlgorithm(self, feedback):
-        networkPath = self.getParameterValue(self.NETWORK)
-        pathsNumber = self.getParameterValue(self.NUMBER_OF_PATHS)
-        gfidStart = self.getParameterValue(self.START_POINT)
-        gfidEnd = self.getParameterValue(self.END_POINT)
-        gfidsBlocked = self.getParameterValue(self.BLOCKED_POINTS)
-        outputPath = self.getOutputValue(self.SHORTEST_PATHS)
+    def groupId(self):
+        return "analysis"
+
+    def __init__(self):
+        super().__init__()
+
+    def initAlgorithm(self, config=None):
+        self.addParameter(QgsProcessingParameterFile(self.NETWORK,
+                                                     self.tr("Network"),
+                                                     QgsProcessingParameterFile.Folder))
+        self.addParameter(QgsProcessingParameterNumber(self.PATHS_NUMBER,
+                                                       self.tr("Number of paths to calculate"),
+                                                       QgsProcessingParameterNumber.Integer,
+                                                       1))
+        self.addParameter(QgsProcessingParameterNumber(self.START_POINT,
+                                                       self.tr("GFID of the start node"),
+                                                       QgsProcessingParameterNumber.Integer,
+                                                       0))
+        self.addParameter(QgsProcessingParameterNumber(self.END_POINT,
+                                                       self.tr("GFID of the end node"),
+                                                       QgsProcessingParameterNumber.Integer,
+                                                       0))
+        self.addParameter(QgsProcessingParameterString(self.BLOCKED_POINTS,
+                                                       self.tr("Comma-separated GFIDs of the blocked nodes"),
+                                                       "",
+                                                       optional=True))
+
+        self.addParameter(QgsProcessingParameterFeatureSink(self.SHORTEST_PATHS,
+                                                            self.tr('Shortest path(s)'),
+                                                            QgsProcessing.TypeVectorLine))
+
+    def processAlgorithm(self, parameters, context, feedback):
+        gfidStart = self.parameterAsInt(parameters, self.START_POINT, context)
+        gfidEnd = self.parameterAsInt(parameters, self.END_POINT, context)
+        gfidsBlocked = self.parameterAsString(parameters, self.BLOCKED_POINTS, context)
 
         if gfidStart == gfidEnd:
-            raise GeoAlgorithmExecutionException(
-                self.tr('Start and end points should be different.'))
+            raise QgsProcessingException(self.tr("Start and end points should be different."))
 
-        if gfidsBlocked is not None:
-            gfidsBlocked = [int(gfid.strip()) for gfid in gfidsBlocked.split(',')]
+        if gfidsBlocked != "":
+            gfidsBlocked = [int(gfid.strip()) for gfid in gfidsBlocked.split(",")]
 
             if gfidStart in gfidsBlocked:
-                raise GeoAlgorithmExecutionException(
-                    self.tr('Start point can not be blocked.'))
+                raise QgsProcessingException(self.tr("Start point can not be blocked."))
 
             if gfidEnd in gfidsBlocked:
-                raise GeoAlgorithmExecutionException(
-                    self.tr('End point can not be blocked.'))
+                raise QgsProcessingException(self.tr("End point can not be blocked."))
+        else:
+            gfidsBlocked = None
 
         # load network
-        ds = gdal.OpenEx(networkPath)
+        ds = gdal.OpenEx(self.parameterAsString(parameters, self.NETWORK, context))
         network = gnm.CastToGenericNetwork(ds)
         if network is None:
-            raise GeoAlgorithmExecutionException(
-                self.tr('Can not open generic network dataset.'))
+            raise QgsProcessingException(self.tr("Can not open generic network dataset."))
 
         # block nodes if necessary
         if gfidsBlocked is not None:
@@ -125,6 +127,7 @@ class ShortestPathPointToPoint(GeoAlgorithm):
                 network.ChangeBlockState(gfid, True)
 
         # calculate shortest paths
+        pathsNumber = self.parameterAsInt(parameters, self.PATHS_NUMBER, context)
         if pathsNumber == 1:
             layer = network.GetPath(gfidStart, gfidEnd, gnm.GATDijkstraShortestPath)
         else:
@@ -137,28 +140,23 @@ class ShortestPathPointToPoint(GeoAlgorithm):
                 network.ChangeBlockState(gfid, False)
 
         if layer is None:
-            raise GeoAlgorithmExecutionException(
-                self.tr('Error occured during shortest path calculation.'))
+            raise QgsProcessingException(self.tr("Error occured during shortest path calculation."))
 
         if layer.GetFeatureCount() == 0:
-            feedback.pushInfo(
-                self.tr('There is no path from the start point to the end point.'))
+            feedback.pushInfo(self.tr("There is no path from the start point to the end point."))
 
         # copy features to the output layer
         networkCrs = network.GetProjectionRef()
         crs = QgsCoordinateReferenceSystem(networkCrs)
 
         fields = QgsFields()
-        fields.append(QgsField('gfid', QVariant.Int, '', 10, 0))
-        fields.append(QgsField('ogrlayer', QVariant.String, '', 254))
-        fields.append(QgsField('path_num', QVariant.Int, '', 10, 0))
-        fields.append(QgsField('type', QVariant.String, '', 254))
+        fields.append(QgsField("gfid", QVariant.Int, "", 10, 0))
+        fields.append(QgsField("ogrlayer", QVariant.String, "", 254))
+        fields.append(QgsField("path_num", QVariant.Int, "", 10, 0))
+        fields.append(QgsField("type", QVariant.String, "", 254))
 
-        writer = self.getOutputFromName(
-            self.SHORTEST_PATHS).getVectorWriter(
-                fields,
-                QgsWkbTypes.LineString,
-                crs)
+        (sink, dest_id) = self.parameterAsSink(parameters, self.SHORTEST_PATHS, context,
+                                               fields, QgsWkbTypes.LineString, crs)
 
         feat = QgsFeature()
         feat.setFields(fields)
@@ -172,15 +170,15 @@ class ShortestPathPointToPoint(GeoAlgorithm):
                 wkb = g.ExportToWkb()
                 geom.fromWkb(wkb)
                 feat.setGeometry(geom)
-                feat['gfid'] = f.GetFieldAsInteger64(0)
-                feat['ogrlayer'] = f.GetFieldAsString(1)
-                feat['path_num'] = f.GetFieldAsInteger64(2)
-                feat['type'] = f.GetFieldAsString(3)
-                writer.addFeature(feat)
+                feat["gfid"] = f.GetFieldAsInteger64(0)
+                feat["ogrlayer"] = f.GetFieldAsString(1)
+                feat["path_num"] = f.GetFieldAsInteger64(2)
+                feat["type"] = f.GetFieldAsString(3)
+                sink.addFeature(feat, QgsFeatureSink.FastInsert)
             f = layer.GetNextFeature()
-
-        del writer
 
         network.ReleaseResultSet(layer)
         network = None
         ds = None
+
+        return {self.SHORTEST_PATHS: dest_id}

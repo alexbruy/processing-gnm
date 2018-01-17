@@ -5,7 +5,7 @@
     connectivitytreepoint.py
     ---------------------
     Date                 : March 2017
-    Copyright            : (C) 2017 by Alexander Bruy
+    Copyright            : (C) 2017-2018 by Alexander Bruy
     Email                : alexander dot bruy at gmail dot com
 ***************************************************************************
 *                                                                         *
@@ -19,13 +19,11 @@
 
 __author__ = 'Alexander Bruy'
 __date__ = 'March 2017'
-__copyright__ = '(C) 2017, Alexander Bruy'
+__copyright__ = '(C) 2017-2018, Alexander Bruy'
 
 # This will get replaced with a git SHA1 when you do a git archive
 
 __revision__ = '$Format:%H$'
-
-import os
 
 from osgeo import gdal, gnm, ogr
 
@@ -34,81 +32,90 @@ from qgis.PyQt.QtCore import QVariant
 from qgis.core import (QgsCoordinateReferenceSystem,
                        QgsGeometry,
                        QgsFeature,
-                       QgsField,
                        QgsFields,
-                       QgsWkbTypes)
+                       QgsField,
+                       QgsWkbTypes,
+                       QgsFeatureSink,
+                       QgsProcessing,
+                       QgsProcessingException,
+                       QgsProcessingParameterFile,
+                       QgsProcessingParameterNumber,
+                       QgsProcessingParameterString,
+                       QgsProcessingParameterFeatureSink,
+                       )
 
-from processing.core.GeoAlgorithm import GeoAlgorithm
-from processing.core.GeoAlgorithmExecutionException import GeoAlgorithmExecutionException
-from processing.core.parameters import (ParameterFile,
-                                        ParameterNumber,
-                                        ParameterString)
-
-from processing.core.outputs import OutputVector
-
-from processing.algs.gdal.GdalUtils import GdalUtils
+from processing_gnm.gnmAlgorithm import GnmAlgorithm
 
 
-class ConnectivityTreePoint(GeoAlgorithm):
+class ConnectivityTreePoint(GnmAlgorithm):
 
-    NETWORK = 'NETWORK'
-    START_POINT = 'START_POINT'
-    END_POINT = 'END_POINT'
-    BLOCKED_POINTS = 'BLOCKED_POINTS'
-    CONNECTIVITY_TREE = 'CONNECTIVITY_TREE'
+    NETWORK = "NETWORK"
+    START_POINT = "START_POINT"
+    END_POINT = "END_POINT"
+    BLOCKED_POINTS = "BLOCKED_POINTS"
+    CONNECTIVITY_TREE = "CONNECTIVITY_TREE"
 
-    def defineCharacteristics(self):
-        self.name = 'Connectivity tree (from point)'
-        self.group = 'Network analysis'
+    def name(self):
+        return "connectivitytreepoint"
 
-        self.addParameter(ParameterFile(
-            self.NETWORK,
-            self.tr('Directory with network'),
-            isFolder=True,
-            optional=False))
-        self.addParameter(ParameterNumber(
-            self.START_POINT,
-            self.tr('GFID of the start node (value of the "gnm_fid" field)'),
-            default=0))
-        self.addParameter(ParameterNumber(
-            self.END_POINT,
-            self.tr('GFID of the end node (value of the "gnm_fid" field)'),
-            default=0,
-            optional=True))
-        self.addParameter(ParameterString(
-            self.BLOCKED_POINTS,
-            self.tr('Comma-separated GFIDs of the blocked nodes'),
-            '',
-            optional=True))
+    def displayName(self):
+        return self.tr("Connectivity tree (point to point)")
 
-        self.addOutput(OutputVector(
-            self.CONNECTIVITY_TREE,
-            self.tr('Connectivity tree')))
+    def group(self):
+        return self.tr("Network analysis")
 
-    def processAlgorithm(self, feedback):
-        networkPath = self.getParameterValue(self.NETWORK)
-        gfidStart = self.getParameterValue(self.START_POINT)
-        gfidEnd = self.getParameterValue(self.END_POINT)
-        gfidsBlocked = self.getParameterValue(self.BLOCKED_POINTS)
-        outputPath = self.getOutputValue(self.CONNECTIVITY_TREE)
+    def groupId(self):
+        return "analysis"
 
-        if gfidsBlocked is not None:
-            gfidsBlocked = [int(gfid.strip()) for gfid in gfidsBlocked.split(',')]
+    def __init__(self):
+        super().__init__()
+
+    def initAlgorithm(self, config=None):
+        self.addParameter(QgsProcessingParameterFile(self.NETWORK,
+                                                     self.tr("Network"),
+                                                     QgsProcessingParameterFile.Folder))
+        self.addParameter(QgsProcessingParameterNumber(self.START_POINT,
+                                                       self.tr("GFID of the start node"),
+                                                       QgsProcessingParameterNumber.Integer,
+                                                       0))
+        self.addParameter(QgsProcessingParameterNumber(self.END_POINT,
+                                                       self.tr("GFID of the end node"),
+                                                       QgsProcessingParameterNumber.Integer,
+                                                       -1,
+                                                       optional=True))
+        self.addParameter(QgsProcessingParameterString(self.BLOCKED_POINTS,
+                                                       self.tr("Comma-separated GFIDs of the blocked nodes"),
+                                                       "",
+                                                       optional=True))
+
+        self.addParameter(QgsProcessingParameterFeatureSink(self.CONNECTIVITY_TREE,
+                                                            self.tr("Connectivity tree"),
+                                                            QgsProcessing.TypeVectorLine))
+
+    def processAlgorithm(self, parameters, context, feedback):
+        gfidStart = self.parameterAsInt(parameters, self.START_POINT, context)
+        gfidEnd = self.parameterAsInt(parameters, self.END_POINT, context)
+        gfidsBlocked = self.parameterAsString(parameters, self.BLOCKED_POINTS, context)
+
+        if gfidStart == gfidEnd:
+            raise QgsProcessingException(self.tr("Start and end points should be different."))
+
+        if gfidsBlocked != "":
+            gfidsBlocked = [int(gfid.strip()) for gfid in gfidsBlocked.split(",")]
 
             if gfidStart in gfidsBlocked:
-                raise GeoAlgorithmExecutionException(
-                    self.tr('Start point can not be blocked.'))
+                raise QgsProcessingException(self.tr("Start point can not be blocked."))
 
-            if gfidEnd is not None and gfidEnd in gfidsBlocked:
-                raise GeoAlgorithmExecutionException(
-                    self.tr('End point can not be blocked.'))
+            if gfidEnd in gfidsBlocked:
+                raise QgsProcessingException(self.tr("End point can not be blocked."))
+        else:
+            gfidsBlocked = None
 
         # load network
-        ds = gdal.OpenEx(networkPath)
+        ds = gdal.OpenEx(self.parameterAsString(parameters, self.NETWORK, context))
         network = gnm.CastToGenericNetwork(ds)
         if network is None:
-            raise GeoAlgorithmExecutionException(
-                self.tr('Can not open generic network dataset.'))
+            raise QgsProcessingException(self.tr("Can not open generic network dataset."))
 
         # block nodes if necessary
         if gfidsBlocked is not None:
@@ -127,28 +134,23 @@ class ConnectivityTreePoint(GeoAlgorithm):
                 network.ChangeBlockState(gfid, False)
 
         if layer is None:
-            raise GeoAlgorithmExecutionException(
-                self.tr('Error occured during connectivity tree calculation.'))
+            raise QgsProcessingException(self.tr("Error occured during connectivity tree calculation."))
 
         if layer.GetFeatureCount() == 0:
-            feedback.pushInfo(
-                self.tr('Start node has no connections with other nodes.'))
+            feedback.pushInfo(self.tr("Start node has no connections with other nodes."))
 
         # copy features to the output layer
         networkCrs = network.GetProjectionRef()
         crs = QgsCoordinateReferenceSystem(networkCrs)
 
         fields = QgsFields()
-        fields.append(QgsField('gfid', QVariant.Int, '', 10, 0))
-        fields.append(QgsField('ogrlayer', QVariant.String, '', 254))
-        fields.append(QgsField('path_num', QVariant.Int, '', 10, 0))
-        fields.append(QgsField('type', QVariant.String, '', 254))
+        fields.append(QgsField("gfid", QVariant.Int, "", 10, 0))
+        fields.append(QgsField("ogrlayer", QVariant.String, "", 254))
+        fields.append(QgsField("path_num", QVariant.Int, "", 10, 0))
+        fields.append(QgsField("type", QVariant.String, "", 254))
 
-        writer = self.getOutputFromName(
-            self.CONNECTIVITY_TREE).getVectorWriter(
-                fields,
-                QgsWkbTypes.LineString,
-                crs)
+        (sink, dest_id) = self.parameterAsSink(parameters, self.CONNECTIVITY_TREE, context,
+                                               fields, QgsWkbTypes.LineString, crs)
 
         feat = QgsFeature()
         feat.setFields(fields)
@@ -162,15 +164,15 @@ class ConnectivityTreePoint(GeoAlgorithm):
                 wkb = g.ExportToWkb()
                 geom.fromWkb(wkb)
                 feat.setGeometry(geom)
-                feat['gfid'] = f.GetFieldAsInteger64(0)
-                feat['ogrlayer'] = f.GetFieldAsString(1)
-                feat['path_num'] = f.GetFieldAsInteger64(2)
-                feat['type'] = f.GetFieldAsString(3)
-                writer.addFeature(feat)
+                feat["gfid"] = f.GetFieldAsInteger64(0)
+                feat["ogrlayer"] = f.GetFieldAsString(1)
+                feat["path_num"] = f.GetFieldAsInteger64(2)
+                feat["type"] = f.GetFieldAsString(3)
+                sink.addFeature(feat, QgsFeatureSink.FastInsert)
             f = layer.GetNextFeature()
-
-        del writer
 
         network.ReleaseResultSet(layer)
         network = None
         ds = None
+
+        return {self.CONNECTIVITY_TREE: dest_id}

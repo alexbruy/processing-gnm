@@ -2,10 +2,10 @@
 
 """
 ***************************************************************************
-    __init__.py
+    gnmUtils.py
     ---------------------
-    Date                 : February 2017
-    Copyright            : (C) 2017-2018 by Alexander Bruy
+    Date                 : January 2018
+    Copyright            : (C) 2018 by Alexander Bruy
     Email                : alexander dot bruy at gmail dot com
 ***************************************************************************
 *                                                                         *
@@ -18,15 +18,12 @@
 """
 
 __author__ = 'Alexander Bruy'
-__date__ = 'February 2017'
-__copyright__ = '(C) 2017-2018, Alexander Bruy'
+__date__ = 'January 2018'
+__copyright__ = '(C) 2018, Alexander Bruy'
 
 # This will get replaced with a git SHA1 when you do a git archive
 
 __revision__ = '$Format:%H$'
 
-from processing_gnm.gnmProviderPlugin import GnmProviderPlugin
 
-
-def classFactory(iface):
-    return GnmProviderPlugin()
+GDALGNM_ACTIVE = "GDALGNM_ACTIVE"

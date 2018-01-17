@@ -5,7 +5,7 @@
     removenetwork.py
     ---------------------
     Date                 : February 2017
-    Copyright            : (C) 2017 by Alexander Bruy
+    Copyright            : (C) 2017-2018 by Alexander Bruy
     Email                : alexander dot bruy at gmail dot com
 ***************************************************************************
 *                                                                         *
@@ -19,7 +19,7 @@
 
 __author__ = 'Alexander Bruy'
 __date__ = 'February 2017'
-__copyright__ = '(C) 2017, Alexander Bruy'
+__copyright__ = '(C) 2017-2018, Alexander Bruy'
 
 # This will get replaced with a git SHA1 when you do a git archive
 
@@ -27,25 +27,42 @@ __revision__ = '$Format:%H$'
 
 from osgeo import gdal
 
-from processing.core.GeoAlgorithm import GeoAlgorithm
-from processing.core.parameters import ParameterFile
+from qgis.core import QgsProcessingParameterFile, QgsProcessingOutputNumber
 
+from processing_gnm.gnmAlgorithm import GnmAlgorithm
 
-class RemoveNetwork(GeoAlgorithm):
+class RemoveNetwork(GnmAlgorithm):
 
-    NETWORK = 'NETWORK'
+    NETWORK = "NETWORK"
+    RESULT = "RESULT"
 
-    def defineCharacteristics(self):
-        self.name = 'Remove network'
-        self.group = 'Network management'
+    def name(self):
+        return "removenetwork"
 
-        self.addParameter(ParameterFile(
-            self.NETWORK,
-            self.tr('Directory with network'),
-            isFolder=True,
-            optional=False))
+    def displayName(self):
+        return self.tr("Remove network")
 
-    def processAlgorithm(self, feedback):
-        network = self.getParameterValue(self.NETWORK)
+    def group(self):
+        return self.tr("Network management")
 
-        gdal.GetDriverByName('GNMFile').Delete(network)
+    def groupId(self):
+        return "management"
+
+    def __init__(self):
+        super().__init__()
+
+    def initAlgorithm(self, config=None):
+        self.addParameter(QgsProcessingParameterFile(self.NETWORK,
+                                                     self.tr("Network to remove"),
+                                                     QgsProcessingParameterFile.Folder))
+        self.addOutput(QgsProcessingOutputNumber(self.RESULT,
+                                                 self.tr("Result")))
+
+    def processAlgorithm(self, parameters, context, feedback):
+        driver = gdal.GetDriverByName("GNMFile")
+        if driver is None:
+            raise QgsProcessingException(self.tr("Can not initialize GNM driver."))
+
+        result = driver.Delete(self.parameterAsString(parameters, self.NETWORK, context))
+
+        return {self.RESULT: result}

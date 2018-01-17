@@ -2,7 +2,7 @@
 
 """
 ***************************************************************************
-    __init__.py
+    gnmproviderplugin.py
     ---------------------
     Date                 : February 2017
     Copyright            : (C) 2017-2018 by Alexander Bruy
@@ -25,8 +25,18 @@ __copyright__ = '(C) 2017-2018, Alexander Bruy'
 
 __revision__ = '$Format:%H$'
 
-from processing_gnm.gnmProviderPlugin import GnmProviderPlugin
+from qgis.core import QgsApplication
+
+from processing_gnm.gnmProvider import GnmProvider
 
 
-def classFactory(iface):
-    return GnmProviderPlugin()
+class GnmProviderPlugin:
+
+    def __init__(self):
+        self.provider = GnmProvider()
+
+    def initGui(self):
+        QgsApplication.processingRegistry().addProvider(self.provider)
+
+    def unload(self):
+        QgsApplication.processingRegistry().removeProvider(self.provider)

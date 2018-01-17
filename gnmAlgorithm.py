@@ -2,10 +2,10 @@
 
 """
 ***************************************************************************
-    gnmproviderplugin.py
+    gnmAlgorithm.py
     ---------------------
-    Date                 : February 2017
-    Copyright            : (C) 2017 by Alexander Bruy
+    Date                 : January 2018
+    Copyright            : (C) 2018 by Alexander Bruy
     Email                : alexander dot bruy at gmail dot com
 ***************************************************************************
 *                                                                         *
@@ -16,37 +16,35 @@
 *                                                                         *
 ***************************************************************************
 """
-from builtins import object
 
 __author__ = 'Alexander Bruy'
-__date__ = 'February 2017'
-__copyright__ = '(C) 2017, Alexander Bruy'
+__date__ = 'January 2018'
+__copyright__ = '(C) 2018, Alexander Bruy'
 
 # This will get replaced with a git SHA1 when you do a git archive
 
 __revision__ = '$Format:%H$'
 
 import os
-import sys
-import inspect
 
-from processing.core.Processing import Processing
+from qgis.PyQt.QtCore import QCoreApplication
+from qgis.PyQt.QtGui import QIcon
 
-from processing_gnm.gnmprovider import GnmProvider
+from qgis.core import QgsProcessingAlgorithm
 
-cmd_folder = os.path.split(inspect.getfile(inspect.currentframe()))[0]
-
-if cmd_folder not in sys.path:
-    sys.path.insert(0, cmd_folder)
+pluginPath = os.path.dirname(__file__)
 
 
-class GnmProviderPlugin(object):
+class GnmAlgorithm(QgsProcessingAlgorithm):
 
     def __init__(self):
-        self.provider = GnmProvider()
+        super().__init__()
 
-    def initGui(self):
-        Processing.addProvider(self.provider)
+    def createInstance(self):
+        return type(self)()
 
-    def unload(self):
-        Processing.removeProvider(self.provider)
+    def icon(self):
+        return QIcon(os.path.join(pluginPath, "icons", "networkanalysis.svg"))
+
+    def tr(self, text):
+        return QCoreApplication.translate(self.__class__.__name__, text)
