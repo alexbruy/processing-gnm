@@ -12,3 +12,8 @@ Requires QGIS >= 3.0
 
 NOTE: to use this plugin you need GDAL >= 2.1 build with GNM support and
 corresponing Python bindings.
+
+                           !!! IMPORTANT !!!
+Please read GDAL GNM docs and check GDAL bugtracker before asking questions
+and/or reporting any bugs. GNM is an experimental feature and not ready for
+production use
